@@ -226,7 +226,10 @@ make -j$(nproc)
 ```bash
 运行classifier_cifar.sh前，请改classifier_cifar.sh中的cifar数据路径。
 把/home/xxx/aet-cnn-data改为下载的文件aet-cnn-data.tar.xz的解压路径。
+执行
+1.引入libaet.so libaet_cuda.so
 export LD_LIBRARY_PATH=你的aet安装路径/lib64:$LD_LIBRARY_PATH
+2.运行
 ./classifier_cifar.sh
 ```
 
