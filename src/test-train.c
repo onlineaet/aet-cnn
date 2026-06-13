@@ -27,16 +27,16 @@ int main (int argc, char *argv[])
 //    int argc_dnn=8;
 //
 //    char *parms[]={"aitest","classifier","train","-data",
-//          "/home/sns/darknet-resource/cfg/classifier/cifar/cifar.data",
-//          "-cfg","/home/sns/darknet-resource/cfg/classifier/cifar/cifar_small.cfg",
+//          "/home/xxx/aet-cnn-data/cfg/classifier/cifar/cifar.data",
+//          "-cfg","/home/xxx/aet-cnn-data/cfg/classifier/cifar/cifar_small.cfg",
 //          "-usemtcs"};
 
 
 //    argc_dnn=10;
 //    char *parms[]={"aitest","classifier","valid","-data",
-//          "/home/sns/darknet-resource/cfg/classifier/cifar/cifar.data",
-//          "-cfg","/home/sns/darknet-resource/cfg/classifier/cifar/cifar_small.cfg",
-//          "-weight","/home/sns/darknet-resource/backup/classfier/cifar/darknet.weights",
+//          "/home/xxx/aet-cnn-data/cfg/classifier/cifar/cifar.data",
+//          "-cfg","/home/xxx/aet-cnn-data/cfg/classifier/cifar/cifar_small.cfg",
+//          "-weight","/home/xxx/aet-cnn-data/backup/classfier/cifar/darknet.weights",
 //          "-usemtcs"};
 
    // Business *business=WorkFactory.getInstance()->build(argc_dnn,parms);
