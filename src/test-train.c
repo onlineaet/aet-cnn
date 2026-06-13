@@ -2,14 +2,9 @@
 #include <locale.h>
 #include <string.h>
 #include <stdlib.h>
-#include <aet/util/AKeyFile.h>
-#include <aet/lang/AAssert.h>
 #include <aet/lang/AAssert.h>
 #include <com/ai/dnn/WorkFactory.h>
-#include <com/ai/dnn/Detector.h>
 #include <com/ai/dnn/Business.h>
-#include <com/ai/dnn/DnnUtils.h>
-#include <aet/mtcs/MtcsSystem.h>
 
 int main (int argc, char *argv[])
 {
