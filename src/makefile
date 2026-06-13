@@ -90,4 +90,3 @@ intall:
 clean:
 	@$(FIND) $(OBJECTDIR) -name "*.o" -o -name "*.d" -o -name "*.tmp" | $(XARGS) $(RM) -f
 	@$(RM) -f $(TARGETMAIN)
-	
