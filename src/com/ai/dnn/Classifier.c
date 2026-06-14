@@ -8,6 +8,7 @@
 
 #include <aet/util/ARandom.h>
 #include <aet/mtcs/MtcsMem.h>
+#include <aet/io/AFile.h>
 
 #include "Classifier.h"
 #include "NetworkFactory.h"
@@ -41,7 +42,7 @@ impl$ Classifier{
       return NULL;
    }
 
-   char **getLabels(const char *fileName){
+   char **getLabels(const char *fileName,int *labelCount){
       FILE *fp=fopen(fileName,"r");
       if(!fp)
          return NULL;
@@ -50,29 +51,92 @@ impl$ Classifier{
       if (stat(fileName, &sb) == 0){
          rv = sb.st_size;
       }
+      char **items=NULL;
       if(rv<100*1024){
          char buffer[100*1024];
          int rev=fread(buffer,1,100*1024,fp);
          buffer[rev]='\0';
-         char **items=a_strsplit(buffer,"\n",-1);
-         return items;
+         items=a_strsplit(buffer,"\n",-1);
       }else{
          char * buffer=malloc(rv+1);
          int rev=fread(buffer,1,rv,fp);
          buffer[rev]='\0';
-         char **items=a_strsplit(buffer,"\n",-1);
+         items=a_strsplit(buffer,"\n",-1);
          a_free(buffer);
-         return items;
       }
+      if(items){
+         int  count=a_strv_length(items);//a_strv_length返回的是11不是10
+         if(strlen(items[count-1])==0)
+            count-=1;
+         *labelCount=count;
+      }
+      return items;
+   }
+
+   /**
+    * 获取所有图片的绝对路径
+    */
+   char **getPaths(const char *parentFileName,const char *fileName,int *imgCount){
+      FILE *fp=fopen(fileName,"r");
+      if(!fp)
+         return NULL;
+      struct stat sb;
+      long rv=0;
+      if (stat(fileName, &sb) == 0){
+         rv = sb.st_size;
+      }
+      char * buffer=malloc(rv+1);
+      int rev=fread(buffer,1,rv,fp);
+      buffer[rev]='\0';
+      char **items=a_strsplit(buffer,"\n",-1);
+      auint len=   a_strv_length(items);
+      int i;
+      int count=0;
+      for(i=0;i<len;i++){
+         if(items[i]!=NULL && strlen(items[i])>0)
+            count++;
+      }
+      char **paths=calloc((count+1),sizeof(char*));
+      for(i=0;i<count;i++){
+          if(items[i]!=NULL && strlen(items[i])>0)
+             paths[i]=a_strdup_printf("%s/%s",parentFileName,items[i]);
+      }
+      a_free(buffer);
+      a_strfreev(items);
+      *imgCount=count;
+      return paths;
    }
 
    float sec(clock_t clocks){
       return (float)clocks/CLOCKS_PER_SEC;
    }
 
-   //	    void train(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
-   //	          int ngpus, int dontuse_opencv, int dont_show, int mjpeg_port,
-   //	          int calc_topk, int show_imgs, char* chart_path)
+   static void setBackupDir(char *backup_directory,char *backupDir,AFile *parent){
+      if(backupDir==NULL)
+         sprintf(backup_directory,"%s/backup",parent->getAbsolutePath());
+      else{
+         //是不是绝对路径，如果不是以parent作为父路径
+         AFile *fs=new$ AFile(backupDir);
+         if(!fs->isAbsolute()){
+            printf("不是绝对路径 ----%s\n",backupDir);
+            sprintf(backup_directory,"%s/%s",parent->getAbsolutePath(),backupDir);
+            printf("不是绝对路径 --11--%s\n",backup_directory);
+         }else{
+            sprintf(backup_directory,"%s",fs->getAbsolutePath());
+         }
+         fs->unref();
+      }
+      AFile *dir=new$ AFile(backup_directory);
+      if(!dir->exists()){
+         dir->makeDirs();
+      }
+      dir->unref();
+   }
+
+
+   //     void train(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
+   //           int ngpus, int dontuse_opencv, int dont_show, int mjpeg_port,
+   //           int calc_topk, int show_imgs, char* chart_path)
    void train(int dont_show, int mjpeg_port, int calc_topk, int show_imgs, char* chart_path){
       int i;
       int ngpus = 1;
@@ -102,13 +166,37 @@ impl$ Classifier{
       printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
       ConfigFile *dataCfg =new$ ConfigFile(getDataCfgFile());
       printf("Classfier.c runTrain 00 数据文件:%s train:%d\n",getDataCfgFile(),net->train);
-      char *backup_directory=dataCfg->getStr(NULL,"backup","/backup/");
-      char *label_list = dataCfg->getStr(NULL, "labels", "data/labels.list");
-      char *train_list = dataCfg->getStr(NULL, "train", "data/train.list");
+      char *labelFileName = dataCfg->getStr(NULL, "labels", NULL);
+      if(labelFileName==NULL){
+         a_error("配置labels缺实");
+         return;
+      }
+      char *trainFileName = dataCfg->getStr(NULL, "train", NULL);
+      if(trainFileName==NULL){
+          a_error("配置train缺实");
+          return;
+       }
       int classes = dataCfg->optionFindInt(NULL, "classes", 2);
       int topk_data = dataCfg->optionFindInt(NULL, "top", 5);
       char topk_buff[10];
       sprintf(topk_buff, "top%d", topk_data);
+      printf("labellist :%s\n", getDataCfgFile());
+      AFile *f=new$ AFile(getDataCfgFile());
+      AFile *parent=f->getParentFile();
+      f->unref();
+      char label_list[256];
+      sprintf(label_list,"%s/%s",parent->getAbsolutePath(),labelFileName);
+      char train_list[256];
+      sprintf(train_list,"%s/%s",parent->getAbsolutePath(),trainFileName);
+
+      printf("parent 00--- %s\n",parent->getAbsolutePath());
+      printf("parent 11--- %s\n",label_list);
+      printf("parent 22--- %s\n",train_list);
+
+      char backup_directory[256];
+      setBackupDir(backup_directory,dataCfg->getStr(NULL,"backup",NULL),parent);
+      printf("parent 33--- %s\n",backup_directory);
+
 
       NLayer *l=net->getLastLayer();
       if (classes != l->outputs && (l->type == LayerType.SOFTMAX || l->type == LayerType.COST)) {
@@ -120,21 +208,10 @@ impl$ Classifier{
       net->setInitInputsAndOutputs(TRUE);
 
       int labelsCount = 0;
-      char **labels = getLabels/*!get_labels_custom*/(label_list);
-      if(labels){
-         labelsCount=a_strv_length(labels);//a_strv_length返回的是11不是10
-         if(strlen(labels[labelsCount-1])==0)
-            labelsCount-=1;
-      }
-      int pathsCount = 0;
-      char **paths = getLabels(train_list);
-      if(paths){
-         pathsCount=a_strv_length(paths);//a_strv_length返回的是11不是10
-         if(strlen(paths[pathsCount-1])==0)
-            pathsCount-=1;
-      }
-      printf("标签数：%d 训练图片数 %d\n",labelsCount,pathsCount);
-      int train_images_num =pathsCount;
+      char **labels = getLabels/*!get_labels_custom*/(label_list,&labelsCount);
+      int train_images_num =0;
+      char **paths = getPaths(parent->getAbsolutePath(),train_list,&train_images_num);
+      printf("标签数：%d 训练图片数 %d\n",labelsCount,train_images_num);
 
       ImageData *imageData=new$ ImageData(train_images_num,imgs,classes,net->w,net->h,net->c);
       imageData->threads = 12;
@@ -143,7 +220,6 @@ impl$ Classifier{
       imageData->hierarchy = net->hierarchy;
 
       imageData->contrastive = net->contrastive;
-      //imageData->dontuse_opencv = dontuse_opencv;
       imageData->min = net->min_crop;
       imageData->max = net->max_crop;
       imageData->use_flip = net->flip;
@@ -163,10 +239,8 @@ impl$ Classifier{
       imageData->paths = paths;
       imageData->labels = labels;
       imageData->type = CLASSIFICATION_DATA;
-
+      //需要等线程结束
       int waitId = imageData->loadData/*!load_data*/();
-
-
       int iter_save = net->getCurrentBatch/*!get_current_batch*/();
       int iter_topk = iter_save;/*!get_current_batch(net);*/
       float topk = 0;
@@ -261,14 +335,9 @@ impl$ Classifier{
       free(base);
    }
 
-   void change_leaves(tree *t, char *leaf_list){
-       char **leaves = getLabels/*!get_labels_custom*/(leaf_list);
+   void changeLeaves(tree *t, char *leaf_list){
        int labelsCount = 0;
-       if(leaves){
-          labelsCount=a_strv_length(leaves);//a_strv_length返回的是11不是10
-          if(strlen(leaves[labelsCount-1])==0)
-             labelsCount-=1;
-       }
+       char **leaves = getLabels/*!get_labels_custom*/(leaf_list,&labelsCount);
        int n = labelsCount;
        int i,j;
        int found = 0;
@@ -306,12 +375,19 @@ impl$ Classifier{
       srand(time(0));
       ConfigFile *dataCfg =new$ ConfigFile(getDataCfgFile());
       printf("Classfier.c valid 00 数据文件:%s\n",getDataCfgFile());
-      char *backup_directory=dataCfg->getStr(NULL,"backup","/backup/");
-      char *label_list = dataCfg->getStr(NULL, "labels", "data/labels.list");
+      char *labelFileName = dataCfg->getStr(NULL, "labels", NULL);
+      if(labelFileName==NULL){
+         a_error("配置labels缺实");
+         return 0;
+      }
+
       char *leaf_list = dataCfg->getStr(NULL, "leaves", NULL);
-      if(leaf_list)
-         change_leaves(net->hierarchy, leaf_list);
-      char *valid_list =  dataCfg->getStr(NULL, "valid", "data/train.list");
+      char *leafFileName = dataCfg->getStr(NULL, "leaves", NULL);
+      char *validFileName =  dataCfg->getStr(NULL, "valid", NULL);
+      if(validFileName==NULL){
+         a_error("配置valid缺实");
+         return 0;
+      }
 
       int classes = dataCfg->optionFindInt(NULL, "classes", 2);
       int topk = dataCfg->optionFindInt(NULL, "top", 1);
@@ -320,22 +396,23 @@ impl$ Classifier{
       if (topk > classes)
          topk = classes;
 
+      AFile *f=new$ AFile(getDataCfgFile());
+      AFile *parent=f->getParentFile();
+      f->unref();
+      char label_list[256];
+      sprintf(label_list,"%s/%s",parent->getAbsolutePath(),labelFileName);
+      char valid_list[256];
+      sprintf(valid_list,"%s/%s",parent->getAbsolutePath(),validFileName);
+      if(leafFileName){
+         char leaf_list[256];
+         sprintf(leaf_list,"%s/%s",parent->getAbsolutePath(),leafFileName);
+         changeLeaves(net->hierarchy, leaf_list);
+      }
+
       int labelsCount = 0;
-      char **labels = getLabels/*!get_labels_custom*/(label_list);
-      if(labels){
-         labelsCount=a_strv_length(labels);//a_strv_length返回的是11不是10
-         if(strlen(labels[labelsCount-1])==0)
-            labelsCount-=1;
-      }
-
+      char **labels = getLabels/*!get_labels_custom*/(label_list,&labelsCount);
       int pathCount = 0;
-      char **paths = getLabels/*!get_labels_custom*/(valid_list);
-      if(paths){
-         pathCount=a_strv_length(paths);//a_strv_length返回的是11不是10
-         if(strlen(paths[pathCount-1])==0)
-            pathCount-=1;
-      }
-
+      char **paths = getPaths(parent->getAbsolutePath(),valid_list,&pathCount);
       float avg_acc = 0;
       float avg_topk = 0;
       int* indexes = (int*)xcalloc(topk, sizeof(int));
