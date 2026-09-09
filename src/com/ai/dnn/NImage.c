@@ -51,7 +51,7 @@ static inline void set_pixel(int x, int y, int c, float val,float *data,int widt
    data[c*height*width + y*width + x] = val;
 }
 
-private$ inline float get_pixel(int x, int y, int c,float *imgData,int width,int height,int color)
+static inline float get_pixel(int x, int y, int c,float *imgData,int width,int height,int color)
 {
    a_assert(x < width && y < height && c <color);
    return imgData[c*height*width + y*width + x];

@@ -111,7 +111,7 @@ impl$ CostLayer{
       NNetwork *net=(NNetwork *)network;
       if (!state.truth)
          return;
-      if(costType == MASKED){
+      if(costType ==CostType.MASKED){
          int i,j;
          for(i = 0; i < batch; ++i){
             float *input=state.input->getData(i);
@@ -120,7 +120,7 @@ impl$ CostLayer{
                   input[j]/*!state.input[i]*/ = SECRET_NUM;
          }
       }
-      if(costType == SMOOTH){
+      if(costType == CostType.SMOOTH){
          smoothL1Cpu/*!smooth_l1_cpu*/(state);
       } else {
          l2Cpu/*!l2_cpu*/(state);

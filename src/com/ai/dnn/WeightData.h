@@ -9,9 +9,9 @@
 package$ com.ai.dnn;
 
 // parser.h
-typedef enum {
-    NO_WEIGHTS, PER_FEATURE, PER_CHANNEL
-} WEIGHTS_TYPE_T;
+//typedef enum {
+//    NO_WEIGHTS, PER_FEATURE, PER_CHANNEL
+//} WEIGHTS_TYPE_T;
 
 // parser.h
 typedef enum {

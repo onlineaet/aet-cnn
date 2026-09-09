@@ -51,9 +51,9 @@ impl$ ShortcutLayer{
       outputData=DataFactory.getInstance()->createOutputData(w,h,c,batch);
 
       self->nweights = 0;
-      if (weights_type == PER_FEATURE)
+      if (weights_type == WEIGHTS_TYPE_T.PER_FEATURE)
          self->nweights = (n + 1);
-      else if (weights_type == PER_CHANNEL)
+      else if (weights_type == WEIGHTS_TYPE_T.PER_CHANNEL)
          self->nweights = (n + 1) * c;
 
       if (self->nweights > 0) {

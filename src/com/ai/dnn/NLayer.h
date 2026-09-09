@@ -31,9 +31,14 @@ typedef struct _NetworkState{
 /**
  * 损失函数loss function 也叫代价函数 cost function
  */
-typedef enum{
-    SSE, MASKED, L1, SEG, SMOOTH,WGAN
-} CostType;
+//typedef enum{
+//    SSE, MASKED, L1, SEG, SMOOTH,WGAN
+//} CostType;
+
+public$ enum$ CostType{
+   SSE, MASKED, L1, SEG, SMOOTH,WGAN
+};
+
 
 // tree.h
 typedef struct tree {

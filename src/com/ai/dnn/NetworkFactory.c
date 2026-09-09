@@ -175,11 +175,11 @@ impl$ NetworkFactory{
    ShortcutLayer *createShortcut(char *group, size_params *params){
       ActivationType activation = cfgFile->getActivation(group,"activation", "linear");
       char *weights_type_str = cfgFile->getStr(group,"weights_type","none");
-      WEIGHTS_TYPE_T weights_type = NO_WEIGHTS;
+      WEIGHTS_TYPE_T weights_type = WEIGHTS_TYPE_T.NO_WEIGHTS;
       if(strcmp(weights_type_str, "per_feature") == 0 || strcmp(weights_type_str, "per_layer") == 0)
-         weights_type = PER_FEATURE;
+         weights_type = WEIGHTS_TYPE_T.PER_FEATURE;
       else if (strcmp(weights_type_str, "per_channel") == 0)
-         weights_type = PER_CHANNEL;
+         weights_type = WEIGHTS_TYPE_T.PER_CHANNEL;
       else if (strcmp(weights_type_str, "none") != 0) {
          printf("Error: Incorrect weights_type = %s \n Use one of: none, per_feature, per_channel \n", weights_type_str);
          getchar();

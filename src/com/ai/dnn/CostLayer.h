@@ -12,28 +12,25 @@ package$ com.ai.dnn;
 
 public$ class$ CostLayer extends$ NLayer implements$ OutputLayer{
 
-   public$ enum$ CostType{
-      SSE, MASKED, L1, SEG, SMOOTH,WGAN
-   };
 
    public$ static CostType getCostType(char *s){
       if (strcmp(s, "sse")==0)
-         return SSE;
+         return CostType.SSE;
       if (strcmp(s, "masked")==0)
-         return MASKED;
+         return CostType.MASKED;
       if (strcmp(s, "smooth")==0)
-         return SMOOTH;
+         return CostType.SMOOTH;
       fprintf(stderr, "Couldn't find cost type %s, going with SSE\n", s);
-      return SSE;
+      return CostType.SSE;
    }
 
    public$ static char *getCostString(CostType a){
       switch(a){
-         case SSE:
+         case CostType.SSE:
             return "sse";
-         case MASKED:
+         case CostType.MASKED:
             return "masked";
-         case SMOOTH:
+         case CostType.SMOOTH:
             return "smooth";
          default:
             return "sse";
